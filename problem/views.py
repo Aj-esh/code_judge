@@ -80,6 +80,31 @@ def p_detail(request, pid):
             code = form.cleaned_data['code']
             language = form.cleaned_data['language']
             
+            if action == 'run':
+                testcase_file = os.path.join('testcases', f'{pid}.json')
+                try:
+                    with open(testcase_file, 'r') as f:
+                        testcases = json.load(f)
+                    if testcases:
+                        testcase_1 = testcases[0]
+                        cinput = []
+                        for value in testcase_1['input'].values():
+                            if isinstance(value, list):
+                                cinput.append(' '.join(map(str, value)))
+                            else:
+                                cinput.append(str(value))
+                        cinput = '\n'.join(cinput)
+
+                        result = run(code, cinput, language)
+                        ctx['coutput'] = result.get("coutput", "")
+                        ctx['cerror'] = result.get("cerr", "")
+                    else:
+                        ctx['cerror'] = "No test cases found for this problem."
+                except FileNotFoundError:
+                    ctx['cerror'] = f"{pid}; Test cases not found for this problem."
+                except json.JSONDecodeError:
+                    ctx['cerror'] = f"{pid}; Invalid test case format."
+
             if action == 'submit':
                 testcase_file = os.path.join('testcases', f'{pid}.json')
                 
@@ -98,7 +123,7 @@ def p_detail(request, pid):
                 except json.JSONDecodeError:
                     ctx['status'] = f"{pid}; Invalid test case format."
 
-            elif action == 'run' or action == 'testcase':
+            elif action == 'testcase':
                 cinput = form.cleaned_data.get('cinput', '')
                 result = run(code, cinput, language)
 
