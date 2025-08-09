@@ -12,14 +12,14 @@ still in nascent stage, Below are the features available in the current version 
 - Provides user login, registration, and authentication functionalities.
 
 ### Problem Bank
-
+``
 - Displays the list of coding problems available for users to solve (go through for now).
 
-### Problem Details Page
+### Problem
 
 - Provides detailed information about a specific problem, including its description and requirements.
 
-### script coding Problem Page
+### script your coding challenge
 
 - Allows users to contribute by creating and submitting new coding problems for the community
 
