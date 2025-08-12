@@ -1,167 +1,83 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
+
+import problem
 from .models import Problem
 from django.contrib.auth.decorators import login_required
 from .forms import ProblemForm, SubmissionForm
-from django.http import JsonResponse
-from compiler.views import execute
+
 import os
-import json
 from django.conf import settings
 from .ai_request import aicall
+from .utils import (
+    load_testcases,
+    handle_submission,
+    handle_run,
+    handle_testcase
+)
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+
+from .serializer import ProblemActionSerializer
 
 # Create your views here.
-def run(code, cinput, language):
-    """
-    run, ctestcase, submit the code using a compiler app.
-
-    """
-    result = execute(language, code, cinput)
-    return result
-
-def validate_submission(coutput, expected_output):
-    """
-    Validate the output of a code submission against the expected output.
-    """
-    if isinstance(coutput, list):
-        coutput = " ".join(map(str, coutput))
-    if isinstance(expected_output, str):
-        expected_output = expected_output.strip().lower()
-    # Normalize the output by removing extra spaces and newlines
-    
-    if coutput == expected_output:
-        return True
-    return False
-
-def evaluate_submission(code, language, testcases, pid):
-    """
-    Evaluates the user's code against a set of test cases.
-    Returns a dictionary with the evaluation result.
-    """
-    for i, testcase in enumerate(testcases):
-        try:
-            # The input from the JSON file needs to be serialized back to a string
-            # that the executed code can read from stdin.
-            input_parts = []
-            for key, value in testcase['input'].items():
-                if isinstance(value, list):
-                    input_parts.append(' '.join(map(str, value)))
-                else:
-                    input_parts.append(str(value))
-            cinput = '\n'.join(input_parts)
-
-            expected_output = testcase['output']
-
-        except KeyError:
-            return {
-                'status': f"{pid}; Invalid test case format: 'input' or 'output' key missing in testcase {i+1}.",
-                'cerror': "Invalid test case format."
-            }
-
-        result = run(code, cinput, language)
-        coutput = result.get("coutput", "").strip().lower()
-        cerr = result.get("cerror", "").strip()
-
-        
-        if cerr:
-            return {
-                'cerror': cerr + f" (Testcase {i+1}| {cinput} -> {expected_output} ~{coutput})",
-                'status': f"{pid}; Error in testcase {i+1}: {cerr}"
-            }
-
-        if validate_submission(coutput, expected_output):
-            return {
-                'cerror': f"Testcase {cinput} : {coutput}",
-                'status': f"{pid}; Testcase {i+1} failed: expected '{expected_output}', got '{coutput}'"
-            }
-
-    return {'status': "Accepted!"}
-
 @login_required
 def p_detail(request, pid):
     """
     Fetch the problem details for a given problem ID and render the detail page.
     """
-    try:
-        problem = Problem.objects.get(id=pid)
-    except Problem.DoesNotExist:
-        return redirect('problem_bank')
+    problem = get_object_or_404(Problem, id=pid)
+    form = SubmissionForm()
+    ctx = {'problem': problem, 'form': form}
 
-    ctx = {'problem': problem}
+    return render(request, 'problem/problem_detail.html', ctx)
 
-    if request.method == 'POST':
-        form = SubmissionForm(request.POST)
-        ctx['form'] = form
 
-        if form.is_valid():
-            action = request.POST.get('action')
-            code = form.cleaned_data['code']
-            language = form.cleaned_data['language']
-            
+class ProblemView(APIView):
+    def post(self, request, pid):
+        """
+            Handle problem actions (submit, run, testcase) for pid problem
+        """
+        serializer = ProblemActionSerializer(data=request.data)
+
+        if serializer.is_valid():
+            action = serializer.validated_data['action']
+            code = serializer.validated_data['code']
+            language = serializer.validated_data['language']
+            cinput = serializer.validated_data.get('cinput', '')
+
+            try:
+                problem = Problem.objects.get(id=pid)
+            except Problem.DoesNotExist:
+                return Response({"error": "Problem not found"}, status=status.HTTP_404_NOT_FOUND)
+
+            testcases, error = load_testcases(pid)
+            if error:
+                return Response({"error": error}, status=status.HTTP_404_NOT_FOUND)
+
             if action == 'submit':
-                testcase_file = os.path.join(settings.BASE_DIR, 'testcases', f'{pid}.json')
-                
-                try:
-                    with open(testcase_file, 'r') as f:
-                        testcases = json.load(f)
-                    
-                    evaluation_result = evaluate_submission(code, language, testcases, pid)
-                    ctx.update(evaluation_result)
-                    
-                    problem.submissions += 1
-                    problem.save()
-
-                except FileNotFoundError:
-                    ctx['status'] = f"{pid}; Test cases not found for this problem."
-                except json.JSONDecodeError:
-                    ctx['status'] = f"{pid}; Invalid test case format."
-
+                result = handle_submission(code, language, testcases)
             elif action == 'run':
-                testcase_file = os.path.join(settings.BASE_DIR, 'testcases', f'{pid}.json')
-
-                try:
-                    with open(testcase_file, 'r') as f:
-                        testcases = json.load(f)
-                    
-                    input_parts = []
-                    for value in testcases[0]['input'].values():
-                        if type(value) == list:
-                            input_parts.append(' '.join(map(str, value)))
-                        else:
-                            input_parts.append(str(value))
-                    cinput = '\n'.join(input_parts)
-                    result = run(code, cinput, language)
-
-                    ctx['coutput'] = result.get("coutput", "")
-                    ctx['cerror'] = result.get("cerr", "")
-
-                except FileNotFoundError:
-                    ctx['status'] = f"{pid}; Test cases not found for this problem."
-                except json.JSONDecodeError:
-                    ctx['status'] = f"{pid}; Invalid test case format."
-
+                result = handle_run(code, language, testcases)
             elif action == 'testcase':
-                cinput = form.cleaned_data.get('cinput', '')
-                result = run(code, cinput, language)
+                result = handle_testcase(code, language, cinput)
 
-                ctx['coutput'] = result.get("coutput", "")
-                ctx['cerror'] = result.get("cerr", "")
-
-            if ctx.get('cerror'):
+            if result.get("cerror"):
                 payload = [
                     problem.title,
                     problem.tags,
                     problem.constraints,
                     code,
-                    ctx['cerror'],
-                    ctx.get('status', "")
+                    result['cerror'],
+                    result.get('status', "")
                 ]
-                    
-                ctx['ai_feedback'] = aicall(payload, action)
+                result['ai_feedback'] = aicall(payload, action)                
 
+            return Response(result, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    else:
-        ctx['form'] = SubmissionForm()
-    return render(request, 'problem/problem_detail.html', ctx)
+    
 
 @login_required
 def create_problem(request):

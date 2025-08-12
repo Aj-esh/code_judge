@@ -1,2 +1,4 @@
 .env
 code-critique.pem
+.pyc
+__pycache__/

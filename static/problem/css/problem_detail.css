@@ -23,14 +23,10 @@ html, body {
 .problem-details-container {
     flex: 1;
     overflow-y: auto;
-    padding: 20px;
+    padding: 5px;
     background-color: #ffffff;
     border-left: 1px solid #e0e0e0;
-}
-
-.problem-details-container {
-    background-color: #ffffff;
-    border-left: 1px solid #e0e0e0;
+    overflow-y: auto;
 }
 
 /* Left Pane: Code Editor & Actions */
@@ -50,9 +46,8 @@ html, body {
 
 .language-selector select {
     margin-bottom: 0px;
-    border: none;
     padding: 5px;
-    border: none; /* Removes borders */
+    border: 0; /* Removes borders */
     color: black;
     box-shadow: 0px 4px 6px rgba(43, 42, 42, 0.1);
     box-decoration-break: slice; 
@@ -210,7 +205,6 @@ html, body {
 .problem-details-container {
     display: flex;
     flex-direction: column;
-    gap: 10px;
     padding: 20px;
     background-color: #ffffff;
     border-left: 1px solid #e0e0e0;
@@ -224,44 +218,41 @@ html, body {
 
 .tab-selector {
     display: flex;
-    gap: 10px;
-    margin: none;
+    gap: 0;
+    margin: 0;
+    margin-left: 5px;
 }
 
 .tab-btn {
-    padding: 10px 20px;
+    padding: 8px 15px;
     border: none;
-    background-color: #f8f9fa;
     cursor: pointer;
     font-size: 0.9rem;
-    border-radius: 5px 5px 0 0;
-    margin: none;
+    border-radius: 3px 3px 0 0;
+    margin: 0;
     transition: background-color 0.2s ease;
 }
 
 .tab-btn.active {
     background-color: #333;
-    border-radius: 5px 5px 0 0;
     color: white;
 }
 
 .tab-btn:hover {
     border-color: grey;
-    border-radius: 5px 5px 0 0;
     color: black;
 }
 
 .tab-btn.active:hover {
     background-color: #333;
-    border-radius: 5px 5px 0 0;
     color: #ddd;
 }
 
 .tab-content {
     border: 1px solid #ddd;
     border-radius: 5px;
-    padding: 15px;
-    margin: none;
+    padding: 5px 15px;
+    margin: 0;
     background-color: #ffffff;
 }
 

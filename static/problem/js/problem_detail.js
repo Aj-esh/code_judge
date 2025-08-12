@@ -91,3 +91,118 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     
 });
+
+
+// backend calls
+function handleAction(action) {
+    const pid = document.querySelector(".problem-solving-container").dataset.tab;
+    const code = document.querySelector(".code-editor textarea").value;
+    const language = document.querySelector(".language-selector").value;
+    const cinput = document.querySelector(".code-input-box textarea").value;
+    
+    // Make API call based on action
+    fetch(`/problem/api/${pid}/`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCSRFToken("csrftoken"),
+        },
+        body: JSON.stringify({
+            action: action,
+            code: code,
+            language: language,
+            cinput: cinput,
+        }),
+    })
+    .then((response) => {
+        if(!response.ok) {
+            throw new Error("Network response was not ok");
+        }
+        return response.json();
+    })
+    .then((data) => {
+        if (data.error) {
+            alert(data.error);
+        } else {
+            updateOutput(data);
+        }
+    })
+    .catch((error) => {
+        console.log("Error:", error);
+    });
+}
+
+// helper function to get CSRF token
+function getCSRFToken(name) {
+    const csrftoken = document.querySelector("[name=csrfmiddlewaretoken]");
+    return csrftoken.value;
+}
+
+// update output section dynamically
+function updateOutput(data) {
+
+    // Update status
+    if (data.status) {
+        const statusPane = document.getElementById("status-tab");
+        if (statusPane) {
+            statusPane.querySelector(".status").textContent = data.status;
+        }
+    }
+
+    // Update output
+    if (data.coutput) {
+        const outputPane = document.getElementById("output-tab");
+        if (outputPane) {
+            outputPane.querySelector(".coutput").textContent = data.coutput;
+        }
+    }
+
+    // Update error
+    if (data.cerror) {
+        const errorPane = document.getElementById("error-tab");
+        if (errorPane) {
+            errorPane.querySelector(".cerror").textContent = data.cerror;
+        }
+    }
+
+    // Update AI feedback
+    if (data.ai_feedback) {
+        const aiFeedbackPane = document.getElementById("ai-feedback-tab");
+        if (aiFeedbackPane) {
+            aiFeedbackPane.querySelector(".ai-feedback").textContent = data.ai_feedback;
+        }
+    }
+
+    // Show the output section if hidden
+    if (outputSection) {
+        outputSection.style.display = "block";
+    }
+};
+
+document.addEventListener("DOMContentLoaded", () => {
+    const runButton = document.getElementById("run-btn");
+    const submitButton = document.getElementById("submit-btn");
+    const testcaseButton = document.getElementById("ctestcase-btn");
+
+    if (runButton) {
+        runButton.addEventListener("click", (event) => {
+            event.preventDefault();
+            handleAction("run");
+        });
+    }
+
+    if (submitButton) {
+        submitButton.addEventListener("click", (event) => {
+            event.preventDefault();
+            handleAction("submit");
+        });
+    }
+
+    if (testcaseButton) {
+        testcaseButton.addEventListener("click", (event) => {
+            event.preventDefault();
+            handleAction("testcase");
+        });
+    }
+});
+

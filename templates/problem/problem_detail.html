@@ -5,7 +5,7 @@
 {% block content %}
 {% load static %}
 
-<div class="problem-solving-container">
+<div class="problem-solving-container" data-tab="{{ problem.id }}">
     <!-- Left Pane: Code Editor -->
     <div class="code-editor-container">
         <form method="POST" action="{% url 'problem_detail' problem.id %}" class="code-form">
@@ -95,7 +95,7 @@
         <div class="tab-content">
             <!-- Problem Section -->
             <div id="problem-tab" class="tab-pane active">
-                <h1>{{ problem.title }}</h1>
+                <h1>{{ problem.title }} ${{ problem.id }}</h1>
                 <div class="problem-meta">
                     <span class="difficulty difficulty-{{ problem.difficulty|lower }}">{{ problem.difficulty }}</span>
                     <div class="tags">
@@ -118,7 +118,8 @@
                 </h3>
                 <pre class="ai-feedback">{{ ai_feedback }}</pre>
             </div>
-    
+            {% endif %}
+
             <!-- Chat Section -->
             <div id="chat-tab" class="tab-pane">
                 <h2>Chatspace</h2>
