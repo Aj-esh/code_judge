@@ -57,7 +57,7 @@ class ProblemView(APIView):
                 return Response({"error": error}, status=status.HTTP_404_NOT_FOUND)
 
             if action == 'submit':
-                result = handle_submission(code, language, testcases)
+                result = handle_submission(code, language, testcases, problem)
             elif action == 'run':
                 result = handle_run(code, language, testcases)
             elif action == 'testcase':

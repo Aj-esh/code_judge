@@ -5,26 +5,24 @@ def run(code, cinput, language):
     run, ctestcase, submit the code using a compiler app.
 
     """
-    if language == 'python':
-        language = 'py'
-    if language == "C++":
-        language = 'cpp'
-    if language == "C":
-        language = 'c'
-        
     result = execute(language, code, cinput)
     return result
 
 def validate_submission(coutput, expected_output):
     """
     Validate the output of a code submission against the expected output.
+    Returns 
+        True - output matches, 
+        False - otherwise.
     """
     if isinstance(coutput, list):
         coutput = " ".join(map(str, coutput))
-    if isinstance(expected_output, str):
-        expected_output = expected_output.strip().lower()
-    # Normalize the output by removing extra spaces and newlines
-    
+    coutput = coutput.strip().lower()
+
+    if type(expected_output) == list:
+        expected_output = " ".join(map(str, expected_output))
+    expected_output = str(expected_output).strip().lower()
+
     if coutput == expected_output:
         return True
     return False
@@ -64,11 +62,11 @@ def evaluate_submission(code, language, testcases, pid):
                 'cerror': cerr + f" (Testcase {i+1}| {cinput} -> {expected_output} ~{coutput})",
                 'status': f"{pid}; Error in testcase {i+1}: {cerr}"
             }
-
-        if validate_submission(coutput, expected_output):
+        
+        if not validate_submission(coutput, expected_output):
             return {
                 'cerror': f"Testcase {cinput} : {coutput}",
                 'status': f"{pid}; Testcase {i+1} failed: expected '{expected_output}', got '{coutput}'"
             }
-
+            
     return {'status': "Accepted!"}

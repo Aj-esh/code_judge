@@ -20,11 +20,11 @@ def load_testcases(pid):
         return None, f"{pid}; Invalid test case format."
 
 
-def handle_submission(code, language, testcases, pid, problem):
+def handle_submission(code, language, testcases, problem):
     """
     Handle the submission action.
     """
-    evaluation_result = evaluate_submission(code, language, testcases, pid)
+    evaluation_result = evaluate_submission(code, language, testcases, problem.id)
     problem.submissions += 1
     problem.save()
     return evaluation_result
