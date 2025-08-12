@@ -97,7 +97,7 @@
     border: 1px solid #000000; /* Light border */
     border-radius: 4px; /* Rounded corners */
     background-color: #2c2929; /* Light gray background */
-    color: #333; /* Dark text color */
+    color: white; /* Dark text color */
     font-size: 14px;
     width: 200px; /* Adjust width */
     transition: border-color 0.3s ease, box-shadow 0.3s ease; /* Smooth transition */
