@@ -30,9 +30,7 @@ SECRET_KEY = "django-insecure-&2qfdi62*!qb3i&#ghd2y=_m+_mj4@hjk872g%hustf1w^&rky
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', host]
-
-# Load environment variables from .env file
+ALLOWED_HOSTS = ['*']
 
 # Application definition
 
@@ -43,6 +41,8 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "rest_framework",
+    "corsheaders",
     "accounts",
     "problem",
     "problem_bank",
@@ -52,6 +52,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    'corsheaders.middleware.CorsMiddleware',
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -59,6 +60,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
+CORS_ALLOW_ALL_ORIGINS = True
 ROOT_URLCONF = "code_judge.urls"
 
 TEMPLATES = [
