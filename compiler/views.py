@@ -23,7 +23,7 @@ def compile_python(path, cinput):
     )
     return {
         'coutput': process.stdout.decode('utf-8', errors='replace'),
-        'cerr': process.stderr.decode('utf-8', errors='replace')
+        'cerror': process.stderr.decode('utf-8', errors='replace')
     }
 
 def compile_c(path, cinput):
@@ -54,7 +54,7 @@ def compile_c(path, cinput):
     )
     return {
         'coutput': run_process.stdout.decode('utf-8', errors='replace'),
-        'cerr': run_process.stderr.decode('utf-8', errors='replace')
+        'cerror': run_process.stderr.decode('utf-8', errors='replace')
     }
 
 def compile_cpp(path, cinput):
@@ -86,7 +86,7 @@ def compile_cpp(path, cinput):
     )
     return {
         'coutput': run_process.stdout.decode('utf-8', errors='replace'),
-        'cerr': run_process.stderr.decode('utf-8', errors='replace')
+        'cerror': run_process.stderr.decode('utf-8', errors='replace')
     }
 
 LANGAUGE_DISPATCH = {
@@ -119,7 +119,7 @@ def execute(language, code, cinput) :
     if path is None:
         return {
             'coutput': '',
-            'cerr': 'Unsupported language'
+            'cerror': 'Unsupported language'
         }
 
     with open(path, 'w', encoding='utf-8') as f:
