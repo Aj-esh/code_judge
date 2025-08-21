@@ -1,3 +1,4 @@
+from pathlib import Path
 from django.shortcuts import render
 from problem.models import Problem
 from django.contrib.auth.decorators import login_required
@@ -11,19 +12,27 @@ import shutil
 import random   
 
 # Create your views here.
+def _reset_tmp_dirs():
+    """
+    Safely reset compiler tmp directories (code, executables).
+    Creates them if they do not exist; removes contents if they do.
+    """
+    base_tmp = Path(settings.BASE_DIR) / 'compiler' / 'tmp'
+    code_dir = base_tmp / 'code'
+    exec_dir = base_tmp / 'executables'
+
+    for d in (code_dir, exec_dir):
+        if d.exists():
+            # Remove directory contents without failing if already gone (race-safe)
+            shutil.rmtree(d, ignore_errors=True)
+        d.mkdir(parents=True, exist_ok=True)
+
 def problem_bank(request):
     """
     Fetch relevent probblems and display the problem bank.
     """
 
-    tmp_code_path = os.path.join(settings.BASE_DIR, 'compiler', 'tmp', 'code')
-    shutil.rmtree(tmp_code_path)
-    os.makedirs(tmp_code_path)
-
-    # /executables
-    tmp_exec_path = os.path.join(settings.BASE_DIR, 'compiler', 'tmp', 'executables')
-    shutil.rmtree(tmp_exec_path)
-    os.makedirs(tmp_exec_path)
+    _reset_tmp_dirs()
 
     problems = list(Problem.objects.all())
     random.shuffle(problems)
