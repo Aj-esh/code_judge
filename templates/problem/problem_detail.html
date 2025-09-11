@@ -5,12 +5,12 @@
 {% block content %}
 {% load static %}
 
-<div class="problem-solving-container">
+<div class="problem-solving-container" data-tab="{{ problem.id }}">
     <!-- Left Pane: Code Editor -->
     <div class="code-editor-container">
         <form method="POST" action="{% url 'problem_detail' problem.id %}" class="code-form">
             {% csrf_token %}
-            
+
             <div class="language-selector">
                 <span class="code-icon"></span>
                 {{ form.language }}
@@ -33,69 +33,56 @@
             </div>
         </form>
 
-                {% if status or coutput or cerror or ai_feedback %}
-            <div class="output-section">
-                <div class="tab-selector">
-                    {% if status %}
-                        <button class="tab-btn active" data-tab="status-tab">Status</button>
-                    {% endif %}
-                    {% if coutput %}
-                        <button class="tab-btn {% if not status %}active{% endif %}" data-tab="output-tab">Output</button>
-                    {% endif %}
-                    {% if cerror %}
-                        <button class="tab-btn {% if not status and not coutput %}active{% endif %}" data-tab="error-tab">error</button>
-                    {% endif %}
-                    {% if ai_feedback %}
-                        <button class="tab-btn {% if not status and not coutput and not cerror %}active{% endif %}" data-tab="ai-feedback-tab">AI Feedback</button>
-                    {% endif %}
+        <!--
+        The output section is now always present in the DOM but hidden by default.
+        JavaScript will populate it and make it visible when data is received.
+        -->
+        <div class="output-section" style="display: none;">
+            <div class="tab-selector">
+                <button class="tab-btn" data-tab="status-tab" style="display: none;">Status</button>
+                <button class="tab-btn" data-tab="output-tab" style="display: none;">Output</button>
+                <button class="tab-btn" data-tab="error-tab" style="display: none;">Error</button>
+                <button class="tab-btn" data-tab="ai-feedback-tab" style="display: none;">AI Feedback</button>
+            </div>
+            <div class="tab-content">
+                <div id="status-tab" class="tab-pane">
+                    <h3>Submission Status</h3>
+                    <pre class="status"></pre>
                 </div>
-                <div class="tab-content">
-                    {% if status %}
-                        <div id="status-tab" class="tab-pane active">
-                            <h3>Submission Status</h3>
-                            <pre class="status">{{ status }}</pre>
-                        </div>
-                    {% endif %}
-                    {% if coutput %}
-                        <div id="output-tab" class="tab-pane {% if not status %}active{% endif %}">
-                            <h3>Output</h3>
-                            <pre class="coutput">{{ coutput }}</pre>
-                        </div>
-                    {% endif %}
-                    {% if cerror %}
-                        <div id="error-tab" class="tab-pane {% if not status and not coutput %}active{% endif %}">
-                            <h3>Error</h3>
-                            <pre class="cerror">{{ cerror }}</pre>
-                        </div>
-                    {% endif %}
-                    {% if ai_feedback %}
-                        <div id="ai-feedback-tab" class="tab-pane {% if not status and not coutput and not cerror %}active{% endif %}">
-                            <h3>
-                                <span class="svg-ai-icon"></span> AI Feedback
-                            </h3>
-                            <pre class="ai-feedback">{{ ai_feedback }}</pre>
-                        </div>
-                    {% endif %}
+                <div id="output-tab" class="tab-pane">
+                    <h3>Output</h3>
+                    <pre class="coutput"></pre>
+                </div>
+                <div id="error-tab" class="tab-pane">
+                    <h3>Error</h3>
+                    <pre class="cerror"></pre>
+                </div>
+                <div id="ai-feedback-tab" class="tab-pane">
+                    <h3>
+                        <span class="svg-ai-icon"></span> AI Feedback
+                    </h3>
+                    <pre class="ai-feedback"></pre>
                 </div>
             </div>
-        {% endif %}
+        </div>
     </div>
 
     <div class="problem-details-container">
         <!-- Tab Selector -->
-        <div class="tab-selector">
+        <div class="tab-selector" id="main-tab-selector">
             <button class="tab-btn active" data-tab="problem-tab">Problem</button>
+            <!-- This AI feedback tab on the right can be handled separately if needed -->
             {% if ai_feedback %}
-                <button class="tab-btn" data-tab="ai-feedback-tab">AI Feedback</button>
+                <button class="tab-btn" data-tab="ai-feedback-tab-main">AI Feedback</button>
             {% endif %}
             <button class="tab-btn" data-tab="chat-tab">Chatspace</button>
         </div>
-    
+
         <!-- Tab Content -->
-        <div class="tab-content">
+        <div class="tab-content" id="main-tab-content">
             <!-- Problem Section -->
             <div id="problem-tab" class="tab-pane active">
-                <h1>{{ problem.title }}</h1>
+                <h1>{{ problem.title }} <small style="font-size: 0.6em; font-style: italic; ">{{ problem.id }}</small></h1>
                 <div class="problem-meta">
                     <span class="difficulty difficulty-{{ problem.difficulty|lower }}">{{ problem.difficulty }}</span>
                     <div class="tags">
@@ -109,27 +96,26 @@
                     {{ problem.description|linebreaksbr }}
                 </div>
             </div>
-        
-            <!-- AI Feedback Section -->
+
+            <!-- AI Feedback Section (Right side) -->
             {% if ai_feedback %}
-            <div id="ai-feedback-tab" class="tab-pane {% if not status and not coutput and not cerror %}active{% endif %}">
+            <div id="ai-feedback-tab-main" class="tab-pane">
                 <h3>
                     <span class="svg-ai-icon"></span> AI Feedback
                 </h3>
                 <pre class="ai-feedback">{{ ai_feedback }}</pre>
             </div>
-    
+            {% endif %}
+
             <!-- Chat Section -->
             <div id="chat-tab" class="tab-pane">
                 <h2>Chatspace</h2>
                 <div class="chat-content">
-                    <!-- Chat messages will go here -->
                     <div class="chat-messages">
                         <p><strong>User1:</strong> Hello, I need help with this problem.</p>
                         <p><strong>User2:</strong> Sure, what part are you stuck on?</p>
                     </div>
                 </div>
-                <!-- Chat Footer -->
                 <div class="chat-footer">
                     <textarea class="chat-input" placeholder="Type your message..."></textarea>
                     <button class="send-btn">Send</button>
@@ -137,7 +123,7 @@
             </div>
         </div>
     </div>
-
+</div>
 {% endblock %}
 
 {% block scripts %}
