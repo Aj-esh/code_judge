@@ -8,7 +8,6 @@ still in nascent stage, Below are the features available in the current version 
 ### Authentication System
 
 - Implemented using Django’s native authentication system.
-
 - Provides user login, registration, and authentication functionalities.
 
 ### Problem Bank
@@ -19,15 +18,13 @@ still in nascent stage, Below are the features available in the current version 
 
 - Provides detailed information about a specific problem, including its description and requirements.
 
-### script coding Problem Page
-
-- Allows users to contribute by creating and submitting new coding problems for the community
-
 ### Recommendation System
 
-- Suggests coding problems to users based on their skill level and past activity.
+- Suggests coding problems to users based on their skill level and past activities.
     - the system give 60% weight on problem with similar tags
     - the rest 40% on embedding similarity of problem discription of last problems
-    - both with similar difficulties to the couple of previous problems 
-- Helps users discover new challenges tailored to their interests.
+    - both get on with similar difficulties to the couple of previous problems 
+- Helps users discover problem tailored to their then interests.
 
+### chatspace
+- 2 friends can collobrate on solving a problem, taking learning to a collobrative effort than solo grind 
