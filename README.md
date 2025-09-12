@@ -23,3 +23,11 @@ still in nascent stage, Below are the features available in the current version 
 
 - Allows users to contribute by creating and submitting new coding problems for the community
 
+### Recommendation System
+
+- Suggests coding problems to users based on their skill level and past activity.
+    - the system give 60% weight on problem with similar tags
+    - the rest 40% on embedding similarity of problem discription of last problems
+    - both with similar difficulties to the couple of previous problems 
+- Helps users discover new challenges tailored to their interests.
+
