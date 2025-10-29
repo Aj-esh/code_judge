@@ -9,7 +9,7 @@ import uuid
 
 COMPILER_DIR = Path(settings.BASE_DIR) / 'compiler' / 'tmp'
 CODE_DIR = COMPILER_DIR / 'code'
-EXEC_DIR = COMPILER_DIR / 'executables'
+EXEC_DIR = COMPILER_DIR / 'executable'
 
 def compile_python(path, cinput):
     """

@@ -37,6 +37,7 @@ ALLOWED_HOSTS = ALLOWED_HOSTS = ['127.0.0.1', 'localhost', host]
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -48,6 +49,7 @@ INSTALLED_APPS = [
     "problem_bank",
     "compiler",
     "recommender",
+    "channels",
 ]
 
 MIDDLEWARE = [
@@ -61,6 +63,8 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = "code_judge.urls"
+ASGI_APPLICATION = 'code_judge.asgi.application'
+WSGI_APPLICATION = 'code_judge.wsgi.application'
 
 TEMPLATES = [
     {
@@ -77,8 +81,12 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "code_judge.wsgi.application"
-
+# Channels settings
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    },
+}
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases

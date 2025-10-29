@@ -1,10 +1,13 @@
-// Helper function to get CSRF token for Django POST requests
+/**
+ * Retrieves the CSRF token from a meta tag or a cookie.
+ * @param {string} name - The name of the cookie to look for.
+ * @returns {string|null} The CSRF token value.
+ */
 function getCSRFToken(name) {
-    const csrfTokenInput = document.querySelector("[name=csrfmiddlewaretoken]");
+    const csrfTokenInput = document.querySelector(`[name=csrfmiddlewaretoken]`);
     if (csrfTokenInput) {
         return csrfTokenInput.value;
     }
-    // Fallback for cookie method
     let cookieValue = null;
     if (document.cookie && document.cookie !== '') {
         const cookies = document.cookie.split(';');
@@ -19,83 +22,125 @@ function getCSRFToken(name) {
     return cookieValue;
 }
 
-// Dynamically updates the output section with data from the backend
+/**
+ * Sets the active tab and corresponding content pane.
+ * @param {HTMLElement} tabSelector - The container for the tab buttons.
+ * @param {HTMLElement} targetButton - The tab button to activate.
+ */
+function setActiveTab(tabSelector, targetButton) {
+    if (!tabSelector || !targetButton) return;
+
+    const contentSelector = tabSelector.dataset.content;
+    const contentContainer = contentSelector ? document.querySelector(contentSelector) : null;
+    if (!contentContainer) return;
+
+    tabSelector.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    targetButton.classList.add('active');
+
+    contentContainer.querySelectorAll('.tab-pane').forEach(pane => {
+        pane.classList.remove('active');
+        pane.style.display = 'none';
+    });
+
+    const targetPane = contentContainer.querySelector(targetButton.dataset.target);
+    if (targetPane) {
+        targetPane.classList.add('active');
+        targetPane.style.display = 'block';
+    }
+}
+
+/**
+ * Initializes a tab system.
+ * @param {HTMLElement} tabSelector - The container for the tab buttons.
+ * @returns {function(HTMLElement): void} A function to programmatically set an active tab.
+ */
+function setupTabs(tabSelector) {
+    if (!tabSelector) return () => {};
+
+    const initialButton = tabSelector.querySelector('.tab-btn.active') || tabSelector.querySelector('.tab-btn');
+    if (initialButton) {
+        setActiveTab(tabSelector, initialButton);
+    }
+
+    tabSelector.addEventListener('click', (event) => {
+        const button = event.target.closest('.tab-btn');
+        if (button && tabSelector.contains(button)) {
+            event.preventDefault();
+            setActiveTab(tabSelector, button);
+        }
+    });
+
+    return (button) => setActiveTab(tabSelector, button);
+}
+
+/**
+ * Updates the output section with data from an API response.
+ * @param {object} data - The response data containing status, output, error, etc.
+ */
 function updateOutput(data) {
     const outputSection = document.querySelector(".output-section");
-    if (!outputSection) return; // Guard clause if the element doesn't exist
+    if (!outputSection) return;
 
-    const tabButtons = outputSection.querySelectorAll(".tab-btn");
-    const tabPanes = outputSection.querySelectorAll(".tab-pane");
+    const tabSelector = outputSection.querySelector(".tab-selector");
+    const contentContainer = document.querySelector(tabSelector?.dataset.content);
+    if (!tabSelector || !contentContainer) return;
 
-    // Reset the state by hiding all tabs and panes in the output section
-    tabButtons.forEach(btn => {
+    // Hide all tabs and panes initially
+    tabSelector.querySelectorAll(".tab-btn").forEach(btn => {
         btn.style.display = 'none';
         btn.classList.remove('active');
     });
-    tabPanes.forEach(pane => {
+    contentContainer.querySelectorAll(".tab-pane").forEach(pane => {
         pane.style.display = 'none';
         pane.classList.remove('active');
     });
 
-    let firstVisibleTab = null;
+    let firstVisibleButton = null;
 
-    // For each piece of data, populate the content and make its tab visible
-    if (data.status) {
-        const tabBtn = outputSection.querySelector('[data-tab="status-tab"]');
-        const pane = document.getElementById("status-tab");
-        pane.querySelector(".status").textContent = data.status;
-        tabBtn.style.display = 'inline-block';
-        if (!firstVisibleTab) firstVisibleTab = tabBtn;
-    }
-    if (data.coutput) {
-        const tabBtn = outputSection.querySelector('[data-tab="output-tab"]');
-        const pane = document.getElementById("output-tab");
-        pane.querySelector(".coutput").textContent = data.coutput;
-        tabBtn.style.display = 'inline-block';
-        if (!firstVisibleTab) firstVisibleTab = tabBtn;
-    }
-    if (data.cerror) {
-        const tabBtn = outputSection.querySelector('[data-tab="error-tab"]');
-        const pane = document.getElementById("error-tab");
-        pane.querySelector(".cerror").textContent = data.cerror;
-        tabBtn.style.display = 'inline-block';
-        if (!firstVisibleTab) firstVisibleTab = tabBtn;
-    }
-    if (data.ai_feedback) {
-        const tabBtn = outputSection.querySelector('[data-tab="ai-feedback-tab"]');
-        const pane = document.getElementById("ai-feedback-tab");
-        pane.querySelector(".ai-feedback").textContent = data.ai_feedback;
-        tabBtn.style.display = 'inline-block';
-        if (!firstVisibleTab) firstVisibleTab = tabBtn;
-    }
+    const dataMap = {
+        status: { target: '#status-pane', class: '.status' },
+        coutput: { target: '#output-pane', class: '.coutput' },
+        cerror: { target: '#error-pane', class: '.cerror' },
+        ai_feedback: { target: '#ai-feedback-pane', class: '.ai-feedback' }
+    };
 
-    // Activate the first tab that has new content
-    if (firstVisibleTab) {
-        firstVisibleTab.classList.add('active');
-        const activePane = document.getElementById(firstVisibleTab.dataset.tab);
-        if (activePane) {
-            activePane.style.display = 'block';
-            activePane.classList.add('active');
+    for (const key in dataMap) {
+        if (data[key]) {
+            const { target, class: className } = dataMap[key];
+            const tabBtn = tabSelector.querySelector(`[data-target="${target}"]`);
+            const pane = contentContainer.querySelector(target);
+            if (tabBtn && pane) {
+                pane.querySelector(className).textContent = data[key];
+                tabBtn.style.display = 'inline-block';
+                if (!firstVisibleButton) {
+                    firstVisibleButton = tabBtn;
+                }
+            }
         }
     }
 
-    // Make the entire output section visible if any data was processed
-    if (data.status || data.coutput || data.cerror || data.ai_feedback) {
+    if (firstVisibleButton) {
+        setActiveTab(tabSelector, firstVisibleButton);
         outputSection.style.display = "block";
     }
 }
 
-// Handles backend API calls for "run", "submit", and "testcase" actions
-function handleAction(action) {
+/**
+ * Handles API actions like 'run', 'submit', 'testcase'.
+ * @param {string} action - The action to perform.
+ */
+function handleAction(action, editor) {
     const container = document.querySelector(".problem-solving-container");
-    if (!container) return;
+    const languageSelect = document.querySelector(".language-selector select");
+    const inputArea = document.querySelector(".code-input-box textarea");
+
+    if (!container || !editor || !languageSelect) return;
 
     const pid = container.dataset.tab;
-    const code = document.querySelector(".code-editor textarea").value;
-    const language = document.querySelector(".language-selector select").value;
-    const cinput = document.querySelector(".code-input-box textarea").value;
+    const code = editor.getValue();
+    const language = languageSelect.value;
+    const cinput = inputArea ? inputArea.value : "";
 
-    // Make the API call
     fetch(`/problem/api/${pid}/`, {
         method: "POST",
         headers: {
@@ -104,103 +149,233 @@ function handleAction(action) {
         },
         body: JSON.stringify({ action, code, language, cinput }),
     })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
-        }
-        return response.json();
-    })
+    .then(response => response.ok ? response.json() : Promise.reject(response))
     .then(data => {
-        if (data.error) {
-            updateOutput({ cerror: data.error }); // Display backend error in the UI
-        } else {
-            updateOutput(data);
-        }
+        updateOutput(data.error ? { cerror: data.error } : data);
     })
     .catch(error => {
         console.error("Fetch Error:", error);
-        updateOutput({ cerror: `An error occurred: ${error.message}` });
+        updateOutput({ cerror: "An error occurred while processing your request." });
     });
 }
 
-// =================================================================================
-document.addEventListener("DOMContentLoaded", () => {
+/**
+ * Main application entry point.
+ */
+document.addEventListener("DOMContentLoaded", async () => {
     // --- Element Selectors ---
-    const codeEditor = document.querySelector(".code-editor textarea");
-    const runButton = document.getElementById("run-btn");
-    const submitButton = document.getElementById("submit-btn");
-    const ctestcaseButton = document.getElementById("ctestcase-btn");
+    const editorDiv = document.getElementById("editor");
+    const codeTextarea = document.querySelector('textarea[name="code"]');
+    const mainTabSelector = document.querySelector("#main-tab-selector");
+    const outputTabSelector = document.querySelector(".output-section .tab-selector");
+    const problemContainer = document.querySelector(".problem-solving-container");
+    const createChatSessionBtn = document.getElementById('create-chat-session-btn');
+    const chatspaceTabButton = mainTabSelector?.querySelector('[data-target="#chatspace-tab"]');
+    const shareContainer = document.getElementById('share-container');
+    const shareUrlInput = document.getElementById('share-url');
+    const copyUrlBtn = document.getElementById('copy-url-btn');
+    const chatLog = document.getElementById('chat-log');
+    const chatMessageInput = document.getElementById('chat-message-input');
+    const chatMessageSubmit = document.getElementById('chat-message-submit');
+    const languageSelect = document.querySelector(".language-selector select");
 
-    // --- Initial UI Setup (Run Once) ---
-    const codeIcon = document.querySelector(".code-icon");
-    if (codeIcon) codeIcon.textContent = "</>";
+    // --- State Variables ---
+    let chatSocket = null;
+    let chatspaceUUID = new URLSearchParams(window.location.search).get('cs');
+    const problemId = problemContainer?.dataset.tab;
 
-    const testcaseButtonIconContainer = document.querySelector("#ctestcase-btn .svg-icon");
-    if (testcaseButtonIconContainer) {
-        testcaseButtonIconContainer.innerHTML = `
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
-                <rect y="4" width="20" height="2" rx="1"></rect>
-                <rect y="11" width="20" height="2" rx="1"></rect>
-            </svg>
-        `;
+    // --- Initialization ---
+    if (!editorDiv || !codeTextarea) {
+        console.error("Monaco Editor container or textarea not found. Aborting script.");
+        return;
     }
 
-    // --- Event Listeners (Attach Once) ---
+    const editor = await initializeMonacoEditor(editorDiv, codeTextarea, languageSelect);
+    if (!editor) {
+        console.error("Failed to initialize Monaco Editor.");
+        return;
+    }
 
-    // Action Buttons
-    if (runButton) runButton.addEventListener("click", (e) => { e.preventDefault(); handleAction("run"); });
-    if (submitButton) submitButton.addEventListener("click", (e) => { e.preventDefault(); handleAction("submit"); });
-    if (ctestcaseButton) ctestcaseButton.addEventListener("click", (e) => { e.preventDefault(); handleAction("testcase"); });
+    const setActiveMainTab = setupTabs(mainTabSelector);
+    setupTabs(outputTabSelector);
+    initializeActionButtons(editor);
+    initializeChatspace(setActiveMainTab);
 
-    // Scoped Tab Switching Logic (Handles both main and output tabs correctly)
-    document.querySelectorAll(".tab-selector").forEach(tabContainer => {
-        tabContainer.addEventListener("click", (event) => {
-            if (event.target.matches('.tab-btn')) {
-                const clickedButton = event.target;
-                const tabButtons = tabContainer.querySelectorAll(".tab-btn");
-                const contentContainer = tabContainer.nextElementSibling;
 
-                // Deactivate all sibling buttons and hide all sibling panes
-                tabButtons.forEach(btn => btn.classList.remove("active"));
-                if (contentContainer) {
-                    contentContainer.querySelectorAll(".tab-pane").forEach(pane => {
-                        pane.classList.remove("active");
-                        pane.style.display = "none";
-                    });
-                }
 
-                // Activate the clicked button and its corresponding pane
-                clickedButton.classList.add("active");
-                const targetPane = document.getElementById(clickedButton.dataset.tab);
-                if (targetPane) {
-                    targetPane.classList.add("active");
-                    targetPane.style.display = "block";
-                }
-            }
+    // --- Function Definitions ---
+
+    function initializeMonacoEditor(editorDiv, textarea, languageSelect) {
+    return new Promise((resolve) => {
+        if (typeof require === 'undefined') {
+            console.error("Monaco loader not found.");
+            resolve(null);
+            return;
+        }
+
+        require.config({ paths: { 'vs': 'https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs' }});
+        require(['vs/editor/editor.main'], () => {
+            const editor = monaco.editor.create(editorDiv, {
+                value: textarea.value || "# Your code here\n",
+                language: languageSelect.value,
+                theme: 'vs-light',
+                automaticLayout: true,
+                minimap: { enabled: false },
+                scrollBeyondLastLine: false,
+                wordWrap: 'on',
+            });
+
+            // Sync editor content to the hidden textarea on change
+            editor.onDidChangeModelContent(() => {
+                textarea.value = editor.getValue();
+            });
+
+            // Change editor language when the dropdown changes
+            languageSelect.addEventListener('change', () => {
+                monaco.editor.setModelLanguage(editor.getModel(), languageSelect.value);
+            });
+
+            resolve(editor);
         });
     });
+}
 
-    // Keyboard Shortcuts
-    document.addEventListener("keydown", (event) => {
-        // Tab -> 4 spaces in code editor
-        if (event.key === "Tab" && document.activeElement === codeEditor) {
-            event.preventDefault();
-            const start = codeEditor.selectionStart;
-            const end = codeEditor.selectionEnd;
-            codeEditor.value = codeEditor.value.substring(0, start) + "    " + codeEditor.value.substring(end);
-            codeEditor.selectionStart = codeEditor.selectionEnd = start + 4;
+    function initializeActionButtons(editor) {
+        document.getElementById("run-btn")?.addEventListener("click", (e) => { e.preventDefault(); handleAction("run", editor); });
+        document.getElementById("submit-btn")?.addEventListener("click", (e) => { e.preventDefault(); handleAction("submit", editor); });
+        document.getElementById("ctestcase-btn")?.addEventListener("click", (e) => { e.preventDefault(); handleAction("testcase", editor); });
+    }
+
+    function initializeChatspace() {
+        // If a chatspace ID is already in the URL, initialize the chat immediately.
+        if (chatspaceUUID) {
+            showShareUI(true); // Pass true to show the full chat UI
+            setupWebSocket(chatspaceUUID);
+            if (chatspaceTabButton) {
+                setActiveMainTab(chatspaceTabButton);
+            }
         }
 
-        // Ctrl+Enter -> Submit
-        if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
-            event.preventDefault();
-            if (submitButton) submitButton.click();
+        // Handle the creation of a new session.
+        if (createChatSessionBtn) {
+            createChatSessionBtn.addEventListener('click', () => {
+                fetch('/problem/api/chatspace/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCSRFToken('csrftoken'),
+                    },
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.chatspace_uuid) {
+                        chatspaceUUID = data.chatspace_uuid;
+                        const newUrl = `${window.location.pathname}?cs=${chatspaceUUID}`;
+                        history.pushState({ path: newUrl }, '', newUrl);
+                        showShareUI(false); // Pass false to only show the URL to copy
+                    }
+                })
+                .catch(error => console.error('Error creating chat session:', error));
+            });
         }
 
-        // Alt+Enter -> Run
-        if (event.altKey && event.key === "Enter") {
-            event.preventDefault();
-            if (runButton) runButton.click();
+        if (copyUrlBtn) {
+            copyUrlBtn.addEventListener('click', () => {
+                navigator.clipboard.writeText(shareUrlInput.value)
+                    .then(() => {
+                        copyUrlBtn.textContent = 'Copied!';
+                        // Once copied, activate the WebSocket and show the chat interface.
+                        setupWebSocket(chatspaceUUID);
+                        document.getElementById('chat-log').style.display = 'block';
+                        document.querySelector('#chat-message-input').parentElement.style.display = 'flex';
+                        setTimeout(() => { copyUrlBtn.textContent = 'Copy'; }, 2000);
+                    })
+                    .catch(err => console.error('Failed to copy URL:', err));
+            });
         }
-    });
+
+        if (chatMessageSubmit) {
+            chatMessageSubmit.addEventListener('click', sendChatMessage);
+            chatMessageInput?.addEventListener('keyup', (e) => {
+                if (e.key === 'Enter') sendChatMessage();
+            });
+        }
+    }
+
+    function uuidv4() {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+            const r = Math.random() * 16 | 0;
+            const v = c === 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+    }
+
+    function showShareUI(showFullChat) {
+        if (shareContainer && shareUrlInput) {
+            shareUrlInput.value = window.location.href;
+            shareContainer.style.display = 'block';
+            if (createChatSessionBtn) createChatSessionBtn.style.display = 'none';
+
+            // Conditionally show the chat log and input based on the state
+            const chatLog = document.getElementById('chat-log');
+            const chatInput = document.querySelector('#chat-message-input').parentElement;
+            if (showFullChat) {
+                chatLog.style.display = 'block';
+                chatInput.style.display = 'flex';
+            } else {
+                chatLog.style.display = 'none';
+                chatInput.style.display = 'none';
+            }
+        }
+    }
+
+    function appendChatMessage(message, type = 'normal') {
+        if (!chatLog) return;
+        const entry = document.createElement('div');
+        entry.textContent = message;
+        if (type === 'system') {
+            entry.style.fontStyle = 'italic';
+            entry.style.color = '#666';
+        }
+        chatLog.appendChild(entry);
+        chatLog.scrollTop = chatLog.scrollHeight;
+    }
+
+    function sendChatMessage() {
+        if (!chatMessageInput) return;
+        const message = chatMessageInput.value.trim();
+        if (message && chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+            chatSocket.send(JSON.stringify({ type: 'chat_message', message }));
+            chatMessageInput.value = '';
+        }
+    }
+
+    function setupWebSocket(uuid) {
+        if (!problemId || !uuid) return;
+        if (chatSocket) chatSocket.close();
+
+        const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+        chatSocket = new WebSocket(`${protocol}://${window.location.host}/ws/problem/${problemId}/${uuid}/`);
+
+        chatSocket.onopen = () => console.log('Chat socket connected.');
+        chatSocket.onclose = () => {
+            console.warn('Chat socket closed.');
+            chatSocket = null;
+        };
+        chatSocket.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            switch (data.type) {
+                case 'chat_message':
+                    if (typeof data.message === 'string') {
+                        appendChatMessage(data.message);
+                    }
+                    break;
+                case 'system':
+                    if (data.message) {
+                        appendChatMessage(`[system] ${data.message}`, 'system');
+                    }
+                    break;
+            }
+        };
+    }
 });

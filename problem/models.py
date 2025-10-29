@@ -1,4 +1,5 @@
 from django.db import models
+from uuid import uuid4
 
 # Create your models here.
 class Tag(models.Model):
@@ -36,3 +37,7 @@ class Problem(models.Model):
     def __str__(self):
         return self.title
 
+class Chatspace(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    problem = models.ForeignKey(Problem, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
