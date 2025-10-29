@@ -27,4 +27,4 @@ still in nascent stage, Below are the features available in the current version 
 - Helps users discover problem tailored to their then interests.
 
 ### chatspace
-- 2 friends can collobrate on solving a problem, taking learning to a collobrative effort than solo grind 
+- 2 friends can collobrate on solving a problem, taking learning to a collobrative effort than a solo grind 

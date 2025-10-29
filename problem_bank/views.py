@@ -33,12 +33,12 @@ def problem_bank(request):
     # delete tmp file
     # /code
     tmp_code_path = os.path.join(settings.BASE_DIR, 'compiler', 'tmp', 'code')
-    shutil.rmtree(tmp_code_path)
-    os.makedirs(tmp_code_path)
+    shutil.rmtree(tmp_code_path, ignore_errors=True)
+    os.makedirs(tmp_code_path, exist_ok=True)
 
     # /executables
-    tmp_exec_path = os.path.join(settings.BASE_DIR, 'compiler', 'tmp', 'executables')
-    shutil.rmtree(tmp_exec_path)
-    os.makedirs(tmp_exec_path)
+    tmp_exec_path = os.path.join(settings.BASE_DIR, 'compiler', 'tmp', 'executable')
+    shutil.rmtree(tmp_exec_path, ignore_errors=True)
+    os.makedirs(tmp_exec_path, exist_ok=True)
 
     return render(request, 'problem_bank/problemset.html', {'problems': problems})

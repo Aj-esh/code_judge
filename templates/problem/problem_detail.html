@@ -8,56 +8,51 @@
 <div class="problem-solving-container" data-tab="{{ problem.id }}">
     <!-- Left Pane: Code Editor -->
     <div class="code-editor-container">
-        <form method="POST" action="{% url 'problem_detail' problem.id %}" class="code-form">
-            {% csrf_token %}
+        <div class="language-selector mb-2">
+            <select class="form-select form-select-sm" style="width: 120px;">
+                <option value="python">Python</option>
+                <option value="java">C</option>
+                <option value="cpp">C++</option>
+            </select>
+        </div>
 
-            <div class="language-selector">
-                <span class="code-icon"></span>
-                {{ form.language }}
-            </div>
-            <div class="code-editor">
-                {{ form.code }}
-            </div>
+        <!-- Monaco Editor will attach here -->
+        <div id="editor" style="height: 420px; border: 1px solid #ddd;"></div>
+        
+        <textarea name="code" style="display: none;"></textarea> <!-- Keep hidden textarea for form data -->
 
-            <div class="input-actions-container">
-                <div class="code-input-box">
-                    {{ form.cinput }}
-                </div>
-                <div class="button-group">
-                    <button type="submit" name="action" value="run" id="run-btn">run</button>
-                    <button type="submit" name="action" value="testcase" id="ctestcase-btn">
-                        <span class="svg-icon"></span>
-                    </button>
-                    <button type="submit" name="action" value="submit" id="submit-btn">submit</button>
-                </div>
-            </div>
-        </form>
+        <div class="code-input-box mt-2">
+            <h6 class="mb-1">Input</h6>
+            <textarea class="form-control" rows="3" placeholder="Input to the code..."></textarea>
+        </div>
 
-        <!--
-        The output section is now always present in the DOM but hidden by default.
-        JavaScript will populate it and make it visible when data is received.
-        -->
+        <div class="action-buttons mt-2">
+            <button id="run-btn" class="btn btn-secondary">Run</button>
+            <button id="submit-btn" class="btn btn-primary">Submit</button>
+        </div>
+
+        <!-- The output section is now part of the left pane -->
         <div class="output-section" style="display: none;">
-            <div class="tab-selector">
-                <button class="tab-btn" data-tab="status-tab" style="display: none;">Status</button>
-                <button class="tab-btn" data-tab="output-tab" style="display: none;">Output</button>
-                <button class="tab-btn" data-tab="error-tab" style="display: none;">Error</button>
-                <button class="tab-btn" data-tab="ai-feedback-tab" style="display: none;">AI Feedback</button>
+            <div class="tab-selector" data-content="#output-tab-content">
+                <button class="tab-btn" data-target="#status-pane" style="display: none;">Status</button>
+                <button class="tab-btn" data-target="#output-pane" style="display: none;">Output</button>
+                <button class="tab-btn" data-target="#error-pane" style="display: none;">Error</button>
+                <button class="tab-btn" data-target="#ai-feedback-pane" style="display: none;">AI Feedback</button>
             </div>
-            <div class="tab-content">
-                <div id="status-tab" class="tab-pane">
+            <div class="tab-content" id="output-tab-content">
+                <div id="status-pane" class="tab-pane">
                     <h3>Submission Status</h3>
                     <pre class="status"></pre>
                 </div>
-                <div id="output-tab" class="tab-pane">
+                <div id="output-pane" class="tab-pane">
                     <h3>Output</h3>
                     <pre class="coutput"></pre>
                 </div>
-                <div id="error-tab" class="tab-pane">
+                <div id="error-pane" class="tab-pane">
                     <h3>Error</h3>
                     <pre class="cerror"></pre>
                 </div>
-                <div id="ai-feedback-tab" class="tab-pane">
+                <div id="ai-feedback-pane" class="tab-pane">
                     <h3>
                         <span class="svg-ai-icon"></span> AI Feedback
                     </h3>
@@ -67,15 +62,15 @@
         </div>
     </div>
 
+    <!-- Right Pane: Problem Details & Chat -->
     <div class="problem-details-container">
         <!-- Tab Selector -->
-        <div class="tab-selector" id="main-tab-selector">
-            <button class="tab-btn active" data-tab="problem-tab">Problem</button>
-            <!-- This AI feedback tab on the right can be handled separately if needed -->
+        <div class="tab-selector" id="main-tab-selector" data-content="#main-tab-content">
+            <button class="tab-btn active" data-target="#problem-tab">Problem</button>
             {% if ai_feedback %}
-                <button class="tab-btn" data-tab="ai-feedback-tab-main">AI Feedback</button>
+                <button class="tab-btn" data-target="#ai-feedback-main-tab">AI Feedback</button>
             {% endif %}
-            <button class="tab-btn" data-tab="chat-tab">Chatspace</button>
+            <button class="tab-btn" data-target="#chatspace-tab">Chatspace</button>
         </div>
 
         <!-- Tab Content -->
@@ -99,7 +94,7 @@
 
             <!-- AI Feedback Section (Right side) -->
             {% if ai_feedback %}
-            <div id="ai-feedback-tab-main" class="tab-pane">
+            <div id="ai-feedback-main-tab" class="tab-pane">
                 <h3>
                     <span class="svg-ai-icon"></span> AI Feedback
                 </h3>
@@ -108,17 +103,20 @@
             {% endif %}
 
             <!-- Chat Section -->
-            <div id="chat-tab" class="tab-pane">
-                <h2>Chatspace</h2>
-                <div class="chat-content">
-                    <div class="chat-messages">
-                        <p><strong>User1:</strong> Hello, I need help with this problem.</p>
-                        <p><strong>User2:</strong> Sure, what part are you stuck on?</p>
+            <div id="chatspace-tab" class="tab-pane">
+                <button id="create-chat-session-btn" class="btn btn-primary">Create Collaborative Session</button>
+
+                <div id="share-container" class="mb-3" style="display: none;">
+                    <label for="share-url" class="form-label fw-bold">Share this URL to invite others:</label>
+                    <div class="input-group">
+                        <input type="text" id="share-url" class="form-control" readonly>
+                        <button id="copy-url-btn" class="btn btn-outline-secondary" type="button">Copy</button>
                     </div>
                 </div>
-                <div class="chat-footer">
-                    <textarea class="chat-input" placeholder="Type your message..."></textarea>
-                    <button class="send-btn">Send</button>
+                <div id="chat-log" style="height: 300px; overflow-y: scroll; border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; background-color: #f8f9fa;"></div>
+                <div class="input-group">
+                    <input id="chat-message-input" type="text" class="form-control" placeholder="Type a message...">
+                    <button id="chat-message-submit" class="btn btn-primary">Send</button>
                 </div>
             </div>
         </div>
@@ -128,10 +126,15 @@
 
 {% block scripts %}
     {{ block.super }}
+    <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs/loader.js"></script>
     <script src="{% static 'problem/js/problem_detail.js' %}"></script>
 {% endblock %}
 
 {% block styles %}
     {{ block.super }}
     <link rel="stylesheet" href="{% static 'problem/css/problem_detail.css' %}">
+    <style>
+        .code-editor textarea { display: none; }
+        #editor { height: 420px; }
+    </style>
 {% endblock %}

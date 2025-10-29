@@ -7,4 +7,5 @@ urlpatterns = [
     
     # This path is ONLY for the background JavaScript calls.
     path('api/<int:pid>/', views.ProblemView.as_view(), name='problem_api'),
+    path('api/chatspace/', views.create_chatspace_session, name='create_chatspace'),
 ]

@@ -18,8 +18,10 @@ from .utils import (
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.decorators import api_view
 
 from .serializer import ProblemActionSerializer
+from uuid import uuid4
 
 # Create your views here.
 @login_required
@@ -29,7 +31,8 @@ def p_detail(request, pid):
     """
     problem = get_object_or_404(Problem, id=pid)
     form = SubmissionForm()
-    ctx = {'problem': problem, 'form': form}
+    chatspace_uuid = request.GET.get('cs', None)
+    ctx = {'problem': problem, 'form': form, 'chatspace_uuid': chatspace_uuid}
 
     return render(request, 'problem/problem_detail.html', ctx)
 
@@ -77,7 +80,14 @@ class ProblemView(APIView):
             return Response(result, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    
+@api_view(['POST'])
+@login_required
+def create_chatspace_session(request):
+    if request.method == 'POST':
+        chatspace_uuid = str(uuid4())
+        return Response({'chatspace_uuid': chatspace_uuid}, status=status.HTTP_200_OK)
+
+    return Response({"error": "Invalid request"}, status=status.HTTP_400_BAD_REQUEST)
 
 @login_required
 def create_problem(request):
@@ -104,3 +114,4 @@ def create_problem(request):
         form =  ProblemForm()
     
     return render(request, 'problem/create_problem.html', {'form': form})
+
